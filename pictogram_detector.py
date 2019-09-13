@@ -1,7 +1,8 @@
 """Small Script For Detecting Pictograms in Images"""
 import cv2
 import numpy as np
-from resizer import constant_aspect_resize
+import pytesseract
+from utility import constant_aspect_resize
 
 
 def detect_pictogram(path):
@@ -18,3 +19,22 @@ def detect_pictogram(path):
     hor_check = cv2.morphologyEx(binary, cv2.MORPH_OPEN, ker_list[1])
     image[(vertical_check == 255) | (hor_check == 255), :] = 255
     return image
+
+
+if __name__ == "__main__":
+    for i in range(1, 10):
+        rpath = "data/" + str(i) + ".png"
+        wpath = "output/" + str(i) + ".png"
+        img = detect_pictogram(rpath)
+        d = pytesseract.image_to_data(img, output_type=pytesseract.Output.DATAFRAME)
+        n_boxes = len(d["level"])
+        for i in range(n_boxes):
+            if (d["level"][i] > 4) and (d["height"][i] < img.shape[0] / 2):
+                (x, y, w, h) = (
+                    d["left"][i],
+                    d["top"][i],
+                    d["width"][i],
+                    d["height"][i],
+                )
+                cv2.rectangle(img, (x, y), (x + w, y + h), (255, 255, 255), -1)
+        cv2.imwrite(wpath, img)
